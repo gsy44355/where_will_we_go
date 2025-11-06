@@ -1,0 +1,17 @@
+{
+  "pluginName": "商圈查找",
+  "description": "查找多个品牌门店都在指定距离内的商圈",
+  "main": "index.html",
+  "version": "1.0.0",
+  "author": "Your Name",
+  "logo": "logo.png",
+  "features": [
+    {
+      "code": "find_clusters",
+      "explain": "查找商圈",
+      "cmds": ["商圈", "商圈查找", "find_clusters"]
+    }
+  ],
+  "preload": "preload.js"
+}
+

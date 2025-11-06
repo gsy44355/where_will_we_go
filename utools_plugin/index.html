@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商圈查找</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            font-size: 24px;
+            margin-bottom: 24px;
+            color: #333;
+            text-align: center;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #666;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #0066cc;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .input-hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #0066cc;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #0052a3;
+        }
+        
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .loading.active {
+            display: block;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #0066cc;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            display: none;
+            padding: 12px;
+            background: #fee;
+            border: 1px solid #fcc;
+            border-radius: 4px;
+            color: #c33;
+            margin-top: 12px;
+            font-size: 14px;
+        }
+        
+        .error.active {
+            display: block;
+        }
+        
+        .settings-link {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .settings-link a {
+            color: #0066cc;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        .settings-link a:hover {
+            text-decoration: underline;
+        }
+        
+        .settings-panel {
+            display: none;
+            margin-top: 20px;
+            padding: 16px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        
+        .settings-panel.active {
+            display: block;
+        }
+        
+        .settings-panel h3 {
+            margin: 0 0 12px 0;
+            font-size: 16px;
+            color: #333;
+        }
+        
+        .api-key-display {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 8px;
+        }
+        
+        .api-key-display input {
+            flex: 1;
+        }
+        
+        .api-key-status {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-weight: 500;
+        }
+        
+        .api-key-status.configured {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .api-key-status.not-configured {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>商圈查找工具</h1>
+        
+        <form id="searchForm">
+            <div class="form-group">
+                <label for="city">城市名称</label>
+                <input type="text" id="city" name="city" placeholder="例如：北京、上海、深圳" required>
+                <div class="input-hint">请输入要搜索的城市名称</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="brands">品牌列表</label>
+                <textarea id="brands" name="brands" placeholder="例如：优衣库,海底捞,星巴克（支持中文逗号）" required></textarea>
+                <div class="input-hint">多个品牌用逗号分隔，支持中文逗号（，）</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="threshold">距离阈值（米）</label>
+                <input type="number" id="threshold" name="threshold" value="200" min="50" max="1000" step="50">
+                <div class="input-hint">门店之间的最大距离，默认200米</div>
+            </div>
+            
+            <div class="error" id="errorMsg"></div>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <div>正在查找商圈，请稍候...</div>
+            </div>
+            
+            <div class="button-group">
+                <button type="button" class="btn-secondary" id="settingsBtn">设置</button>
+                <button type="submit" class="btn-primary" id="searchBtn">查找商圈</button>
+            </div>
+            
+            <div class="settings-panel" id="settingsPanel">
+                <h3>API 密钥配置</h3>
+                <div class="form-group">
+                    <label for="apiKeyInput">高德地图 API 密钥</label>
+                    <div class="api-key-display">
+                        <input type="password" id="apiKeyInput" placeholder="请输入您的API密钥" />
+                        <button type="button" class="btn-secondary" id="saveApiKeyBtn" style="flex: 0 0 auto; padding: 10px 20px;">保存</button>
+                    </div>
+                    <div class="input-hint">
+                        <span id="apiKeyStatus" class="api-key-status not-configured">未配置</span>
+                        <span style="margin-left: 8px;">申请地址: <a href="https://lbs.amap.com/" target="_blank">https://lbs.amap.com/</a></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="settings-link">
+                <a href="#" id="settingsLink">配置API密钥</a>
+            </div>
+        </form>
+    </div>
+    
+    <!-- 引入核心模块 -->
+    <script src="distance.js"></script>
+    <script src="amap_api.js"></script>
+    <script src="cluster_finder.js"></script>
+    <script src="output.js"></script>
+    
+    <script>
+        // 获取 uTools API（如果可用）
+        const utools = window.utools || {};
+        
+        // 获取配置的 API 密钥（支持 uTools 和 localStorage）
+        function getApiKey() {
+            // 优先使用 uTools 存储
+            if (utools && utools.dbStorage) {
+                return utools.dbStorage.getItem('amap_api_key') || '';
+            }
+            // 降级使用 localStorage
+            return localStorage.getItem('amap_api_key') || '';
+        }
+        
+        // 保存 API 密钥（支持 uTools 和 localStorage）
+        function saveApiKey(key) {
+            if (!key || key.trim() === '') {
+                return false;
+            }
+            // 优先使用 uTools 存储
+            if (utools && utools.dbStorage) {
+                utools.dbStorage.setItem('amap_api_key', key.trim());
+            } else {
+                // 降级使用 localStorage
+                localStorage.setItem('amap_api_key', key.trim());
+            }
+            updateApiKeyStatus();
+            return true;
+        }
+        
+        // 更新 API 密钥状态显示
+        function updateApiKeyStatus() {
+            const apiKey = getApiKey();
+            const statusEl = document.getElementById('apiKeyStatus');
+            const inputEl = document.getElementById('apiKeyInput');
+            
+            if (apiKey) {
+                statusEl.textContent = '已配置';
+                statusEl.className = 'api-key-status configured';
+                // 显示部分密钥（前4位和后4位）
+                const maskedKey = apiKey.length > 8 
+                    ? apiKey.substring(0, 4) + '****' + apiKey.substring(apiKey.length - 4)
+                    : '****';
+                inputEl.value = apiKey; // 显示完整密钥以便编辑
+            } else {
+                statusEl.textContent = '未配置';
+                statusEl.className = 'api-key-status not-configured';
+                inputEl.value = '';
+            }
+        }
+        
+        // 显示错误信息
+        function showError(message) {
+            const errorEl = document.getElementById('errorMsg');
+            errorEl.textContent = message;
+            errorEl.classList.add('active');
+            setTimeout(() => {
+                errorEl.classList.remove('active');
+            }, 5000);
+        }
+        
+        // 纯前端查找商圈（无需后端服务）
+        async function searchClusters(city, brands, threshold) {
+            const apiKey = getApiKey();
+            if (!apiKey) {
+                showError('请先配置高德地图API密钥');
+                return null;
+            }
+            
+            try {
+                // 更新进度显示
+                const loadingEl = document.getElementById('loading');
+                const loadingText = loadingEl.querySelector('div:last-child');
+                
+                loadingText.textContent = '正在搜索各品牌门店...';
+                
+                // 1. 搜索品牌门店
+                const brandList = brands.split(',').map(b => b.trim()).filter(b => b);
+                const brandStores = await searchBrands(apiKey, city, brandList);
+                
+                // 过滤掉没有门店的品牌
+                const brandsWithStores = brandList.filter(b => brandStores[b] && brandStores[b].length > 0);
+                if (brandsWithStores.length === 0) {
+                    showError('未找到任何品牌的门店');
+                    return null;
+                }
+                
+                if (brandsWithStores.length < brandList.length) {
+                    const missingBrands = brandList.filter(b => !brandsWithStores.includes(b));
+                    console.warn(`以下品牌未找到门店: ${missingBrands.join(', ')}`);
+                }
+                
+                loadingText.textContent = '正在查找符合条件的商圈...';
+                
+                // 2. 查找商圈
+                const clusters = await findClusters(
+                    Object.fromEntries(brandsWithStores.map(b => [b, brandStores[b]])),
+                    threshold
+                );
+                
+                return {
+                    clusters: clusters,
+                    cluster_count: clusters.length,
+                    api_key: apiKey
+                };
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showError('查找失败: ' + error.message);
+                return null;
+            }
+        }
+        
+        // 下载 HTML 文件
+        function downloadHTML(htmlContent, filename) {
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+            }, 100);
+        }
+        
+        // 品牌输入框：实时转换中文逗号
+        document.getElementById('brands').addEventListener('input', function(e) {
+            let value = e.target.value;
+            // 检测是否有中文逗号或顿号
+            if (value.includes('，') || value.includes('、')) {
+                const cursorPos = e.target.selectionStart;
+                value = value.replace(/，/g, ',').replace(/、/g, ',');
+                e.target.value = value;
+                // 恢复光标位置
+                e.target.setSelectionRange(cursorPos, cursorPos);
+            }
+        });
+        
+        // 表单提交处理
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const city = document.getElementById('city').value.trim();
+            let brands = document.getElementById('brands').value.trim();
+            const threshold = parseInt(document.getElementById('threshold').value);
+            
+            // 自动转换中文逗号为英文逗号
+            brands = brands.replace(/，/g, ',').replace(/、/g, ',');
+            
+            if (!city || !brands) {
+                showError('请填写城市和品牌信息');
+                return;
+            }
+            
+            const loadingEl = document.getElementById('loading');
+            const searchBtn = document.getElementById('searchBtn');
+            
+            loadingEl.classList.add('active');
+            searchBtn.disabled = true;
+            
+            try {
+                const result = await searchClusters(city, brands, threshold);
+                
+                if (result && result.clusters && result.clusters.length > 0) {
+                    // 生成 HTML 地图
+                    const htmlContent = generateMapHTML(result.clusters, city, result.api_key);
+                    
+                    // 在新窗口中打开地图
+                    const opened = openMapInNewWindow(htmlContent);
+                    
+                    if (opened) {
+                        // 显示成功消息（延迟显示，确保窗口已打开）
+                        setTimeout(() => {
+                            alert(`成功找到 ${result.cluster_count} 个商圈！\n地图已在浏览器中打开。`);
+                        }, 1000);
+                    } else {
+                        // 如果无法自动打开，提供下载选项
+                        const download = confirm(`成功找到 ${result.cluster_count} 个商圈！\n无法自动打开地图，是否下载 HTML 文件？\n（下载后双击文件即可打开）`);
+                        if (download) {
+                            downloadHTML(htmlContent, `商圈地图_${city}_${Date.now()}.html`);
+                            alert('文件已下载，请打开下载的 HTML 文件查看地图');
+                        }
+                    }
+                } else {
+                    const message = result?.message || '未找到符合条件的商圈';
+                    showError(message);
+                }
+            } catch (error) {
+                showError('查找失败: ' + error.message);
+            } finally {
+                loadingEl.classList.remove('active');
+                searchBtn.disabled = false;
+            }
+        });
+        
+        // 初始化：加载并显示 API 密钥状态
+        updateApiKeyStatus();
+        
+        // 设置按钮 - 切换配置面板显示
+        document.getElementById('settingsBtn').addEventListener('click', () => {
+            const panel = document.getElementById('settingsPanel');
+            panel.classList.toggle('active');
+            
+            // 如果打开面板，聚焦到输入框
+            if (panel.classList.contains('active')) {
+                setTimeout(() => {
+                    document.getElementById('apiKeyInput').focus();
+                }, 100);
+            }
+        });
+        
+        // 保存 API 密钥按钮
+        document.getElementById('saveApiKeyBtn').addEventListener('click', () => {
+            const apiKey = document.getElementById('apiKeyInput').value.trim();
+            if (!apiKey) {
+                showError('请输入API密钥');
+                return;
+            }
+            
+            if (saveApiKey(apiKey)) {
+                showError(''); // 清除错误
+                // 显示成功提示
+                const statusEl = document.getElementById('apiKeyStatus');
+                const originalText = statusEl.textContent;
+                statusEl.textContent = '保存成功！';
+                setTimeout(() => {
+                    statusEl.textContent = originalText;
+                }, 2000);
+            }
+        });
+        
+        // 配置链接
+        document.getElementById('settingsLink').addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('settingsBtn').click();
+        });
+        
+        // 支持 Enter 键保存
+        document.getElementById('apiKeyInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('saveApiKeyBtn').click();
+            }
+        });
+    </script>
+</body>
+</html>
+
