@@ -4,3 +4,6 @@ flask>=3.0.0
 werkzeug>=3.0.0
 python-dotenv>=1.0.0
 
+# 生产环境推荐安装（可选）
+# gunicorn>=21.2.0
+

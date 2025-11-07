@@ -1,0 +1,56 @@
+# Systemd服务配置文件示例
+# 文件位置: /etc/systemd/system/cluster-finder.service
+#
+# 使用方法：
+# 1. 修改以下配置中的路径和用户
+# 2. 复制到 /etc/systemd/system/cluster-finder.service
+# 3. 运行: sudo systemctl daemon-reload
+# 4. 运行: sudo systemctl enable cluster-finder
+# 5. 运行: sudo systemctl start cluster-finder
+#
+# 查看日志: sudo journalctl -u cluster-finder -f
+# 查看状态: sudo systemctl status cluster-finder
+# 停止服务: sudo systemctl stop cluster-finder
+# 重启服务: sudo systemctl restart cluster-finder
+
+[Unit]
+Description=商圈查找Web服务
+After=network.target
+
+[Service]
+Type=notify
+# 修改为实际运行服务的用户
+User=your_user
+Group=your_group
+
+# 修改为项目实际路径
+WorkingDirectory=/path/to/where_will_we_go
+
+# 修改为虚拟环境路径（如果使用虚拟环境）
+# Environment="PATH=/path/to/venv/bin"
+# ExecStart=/path/to/venv/bin/gunicorn -c gunicorn.conf.py app:app
+
+# 如果使用系统Python（不推荐）
+ExecStart=/usr/bin/python3 /path/to/where_will_we_go/start_production.sh
+
+# 环境变量（可选，如果.env文件不在项目目录）
+# Environment="AMAP_API_KEY=your_key"
+# Environment="SECRET_KEY=your_secret"
+# Environment="PORT=5002"
+
+# 重启策略
+Restart=always
+RestartSec=10
+
+# 资源限制（可选）
+# LimitNOFILE=65535
+# LimitNPROC=4096
+
+# 日志配置
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cluster-finder
+
+[Install]
+WantedBy=multi-user.target
+
