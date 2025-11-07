@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>地图查看 - 商圈查找工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f5f5;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        .map-container {
+            width: 100%;
+            height: calc(100vh - 50px);
+            position: relative;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 16px;
+            }
+            .btn {
+                font-size: 12px;
+                padding: 5px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1>商圈地图</h1>
+            <div>
+                <a href="/result" class="btn">返回结果</a>
+                <a href="/search" class="btn" style="margin-left: 10px;">新搜索</a>
+            </div>
+        </div>
+    </div>
+    <div class="map-container">
+        <iframe id="mapFrame"></iframe>
+    </div>
+    <script>
+        // 从URL参数或sessionStorage获取HTML内容
+        const urlParams = new URLSearchParams(window.location.search);
+        let htmlContent = urlParams.get('html');
+        
+        // 如果URL参数中有html，先解码
+        if (htmlContent) {
+            try {
+                htmlContent = decodeURIComponent(htmlContent);
+            } catch (e) {
+                console.error('URL参数解码失败:', e);
+                htmlContent = null;
+            }
+        }
+        
+        // 如果URL参数中没有，尝试从sessionStorage获取
+        if (!htmlContent) {
+            htmlContent = sessionStorage.getItem('htmlContent');
+            if (!htmlContent) {
+                // 尝试从localStorage获取（作为备用）
+                htmlContent = localStorage.getItem('htmlContent');
+            }
+        }
+        
+        const iframe = document.getElementById('mapFrame');
+        if (htmlContent && htmlContent.trim() !== '' && htmlContent.length > 100) {
+            // 直接设置HTML内容（sessionStorage中的内容已经是字符串，不需要解码）
+            iframe.srcdoc = htmlContent;
+            console.log('地图HTML内容已加载，长度:', htmlContent.length);
+        } else {
+            console.error('未找到地图HTML内容或内容无效', {
+                hasContent: !!htmlContent,
+                contentLength: htmlContent ? htmlContent.length : 0,
+                preview: htmlContent ? htmlContent.substring(0, 100) : 'null'
+            });
+            iframe.srcdoc = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>错误</title></head><body style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:Arial,sans-serif;"><div style="text-align:center;"><h2 style="color:#c33;">未找到地图数据</h2><p style="color:#666;margin-top:10px;">请返回重新搜索</p><a href="/result" style="display:inline-block;margin-top:20px;padding:10px 20px;background:#667eea;color:white;text-decoration:none;border-radius:5px;">返回结果</a></div></body></html>';
+        }
+        
+        iframe.onload = function() {
+            console.log('地图iframe已加载');
+        };
+        
+        iframe.onerror = function() {
+            console.error('地图iframe加载失败');
+        };
+    </script>
+</body>
+</html>
+

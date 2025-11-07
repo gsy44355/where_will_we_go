@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>商圈搜索 - 商圈查找工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding-bottom: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        .btn-logout {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .btn-logout:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .search-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            color: #333;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .form-group small {
+            display: block;
+            color: #999;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        .btn-search {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+        .btn-search:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-search:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+        .loading.show {
+            display: block;
+        }
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-top: 15px;
+            display: none;
+        }
+        .error-message.show {
+            display: block;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            .search-card {
+                padding: 20px;
+            }
+            .header h1 {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1>商圈查找工具</h1>
+            <a href="/logout" class="btn-logout">退出</a>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="search-card">
+            <h2 style="margin-bottom: 20px; color: #333;">搜索商圈</h2>
+            <form id="searchForm">
+                <div class="form-group">
+                    <label for="city">城市名称</label>
+                    <input type="text" id="city" name="city" placeholder="例如：北京、上海、深圳" required>
+                    <small>请输入要搜索的城市名称</small>
+                </div>
+                <div class="form-group">
+                    <label for="brands">品牌列表</label>
+                    <input type="text" id="brands" name="brands" placeholder="例如：优衣库,丰茂烤肉,海底捞（支持中文逗号）" required>
+                    <small>多个品牌用逗号分隔，支持中文逗号（会自动转换）</small>
+                </div>
+                <div class="form-group">
+                    <label for="threshold">距离阈值（米）</label>
+                    <input type="number" id="threshold" name="threshold" value="200" min="50" max="5000" step="50" required>
+                    <small>门店之间的最大距离，默认200米</small>
+                </div>
+                <button type="submit" class="btn-search" id="searchBtn">开始搜索</button>
+                <div class="error-message" id="errorMessage"></div>
+            </form>
+            
+            <div class="loading" id="loading">
+                <div class="loading-spinner"></div>
+                <p>正在搜索商圈，请稍候...</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const form = document.getElementById('searchForm');
+        const errorMessage = document.getElementById('errorMessage');
+        const searchBtn = document.getElementById('searchBtn');
+        const loading = document.getElementById('loading');
+        const brandsInput = document.getElementById('brands');
+        
+        // 自动将中文逗号转换为英文逗号
+        brandsInput.addEventListener('input', function(e) {
+            let value = this.value;
+            // 将中文逗号（，）替换为英文逗号（,）
+            value = value.replace(/，/g, ',');
+            // 将中文分号（；）也替换为英文逗号（,）
+            value = value.replace(/；/g, ',');
+            if (value !== this.value) {
+                this.value = value;
+            }
+        });
+        
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const city = document.getElementById('city').value.trim();
+            // 确保品牌列表中的逗号都是英文逗号
+            let brands = document.getElementById('brands').value.trim();
+            brands = brands.replace(/，/g, ',').replace(/；/g, ',');
+            const threshold = parseFloat(document.getElementById('threshold').value);
+            
+            if (!city || !brands) {
+                showError('请填写所有必填项');
+                return;
+            }
+            
+            searchBtn.disabled = true;
+            searchBtn.textContent = '搜索中...';
+            errorMessage.classList.remove('show');
+            loading.classList.add('show');
+            
+            try {
+                const response = await fetch('/api/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        city: city,
+                        brands: brands,
+                        threshold: threshold
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 将结果存储到sessionStorage
+                    try {
+                        sessionStorage.setItem('searchResult', JSON.stringify(data.result));
+                        // 使用base64编码存储HTML内容，避免特殊字符问题
+                        const htmlContent = data.html_content || '';
+                        if (htmlContent) {
+                            // 直接存储原始HTML字符串（sessionStorage支持）
+                            sessionStorage.setItem('htmlContent', htmlContent);
+                            console.log('HTML内容已保存到sessionStorage，长度:', htmlContent.length);
+                        } else {
+                            console.warn('未收到HTML内容');
+                        }
+                    } catch (e) {
+                        console.error('保存到sessionStorage失败:', e);
+                        // 如果sessionStorage失败，尝试使用localStorage
+                        try {
+                            localStorage.setItem('searchResult', JSON.stringify(data.result));
+                            localStorage.setItem('htmlContent', data.html_content || '');
+                        } catch (e2) {
+                            console.error('保存到localStorage也失败:', e2);
+                            alert('数据保存失败，但可以继续查看结果');
+                        }
+                    }
+                    // 跳转到结果页面
+                    window.location.href = '/result';
+                } else {
+                    showError(data.message || '搜索失败，请稍后重试');
+                    searchBtn.disabled = false;
+                    searchBtn.textContent = '开始搜索';
+                    loading.classList.remove('show');
+                }
+            } catch (error) {
+                showError('网络错误，请稍后重试');
+                searchBtn.disabled = false;
+                searchBtn.textContent = '开始搜索';
+                loading.classList.remove('show');
+            }
+        });
+        
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+        }
+    </script>
+</body>
+</html>
+
