@@ -160,6 +160,29 @@
             padding: 40px;
             color: #999;
         }
+        .btn-map {
+            padding: 12px 30px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-map:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        .btn-map:active {
+            transform: translateY(0);
+        }
+        .map-button-container {
+            margin-bottom: 20px;
+            text-align: center;
+        }
         @media (max-width: 768px) {
             .container {
                 padding: 15px;
@@ -250,6 +273,12 @@
             `;
             
             if (clusters.length > 0) {
+                // 添加查看地图按钮（放在最上面）
+                html += `
+                    <div class="map-button-container">
+                        <button onclick="viewMap()" class="btn-map">查看地图</button>
+                    </div>
+                `;
                 html += '<div class="clusters-list">';
                 clusters.forEach((cluster, index) => {
                     const stores = Object.entries(cluster.brands || {});
@@ -275,13 +304,6 @@
                     `;
                 });
                 html += '</div>';
-                
-                // 添加查看地图按钮（使用JavaScript跳转，避免URL过长）
-                html += `
-                    <div style="margin-top: 20px; text-align: center;">
-                        <button onclick="viewMap()" class="btn btn-primary" style="padding: 12px 30px; font-size: 16px; border: none; cursor: pointer;">查看地图</button>
-                    </div>
-                `;
             } else {
                 html += '<div class="no-result"><p>未找到符合条件的商圈</p></div>';
             }
