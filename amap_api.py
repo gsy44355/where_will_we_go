@@ -4,12 +4,73 @@
 import requests
 import time
 from typing import List, Dict, Optional
-from config import AMAP_API_KEY, AMAP_BASE_URL, POI_SEARCH_ENDPOINT
+from config import AMAP_API_KEY, AMAP_BASE_URL, POI_SEARCH_ENDPOINT, DEDUPLICATION_DISTANCE
+from distance import haversine_distance
 
 # API限流配置
 REQUEST_DELAY = 0.2  # 每次请求之间的延迟（秒）
 RATE_LIMIT_RETRY_DELAY = 2.0  # 遇到限流时的重试延迟（秒）
 MAX_RETRIES = 3  # 最大重试次数
+
+
+def deduplicate_stores(stores: List[Dict], distance_threshold: float = DEDUPLICATION_DISTANCE) -> List[Dict]:
+    """
+    对门店列表进行去重，距离相近的门店认为是同一家店
+    
+    算法：对于每个门店，找到所有距离很近的门店，保留名称最完整（最长）的那个
+    
+    Args:
+        stores: 门店列表，每个门店包含：name, address, lat, lon, poi_id, type
+        distance_threshold: 去重距离阈值（米），默认50米
+    
+    Returns:
+        去重后的门店列表
+    """
+    if len(stores) <= 1:
+        return stores
+    
+    # 使用集合记录已处理的门店索引（被标记为重复的）
+    removed_indices = set()
+    result = []
+    
+    for i, store1 in enumerate(stores):
+        # 如果这个门店已经被标记为重复，跳过
+        if i in removed_indices:
+            continue
+        
+        # 找到所有与当前门店距离很近的门店（包括自己）
+        nearby_stores = [(i, store1)]
+        
+        for j, store2 in enumerate(stores):
+            if j == i or j in removed_indices:
+                continue
+            
+            # 计算距离
+            distance = haversine_distance(
+                store1["lat"], store1["lon"],
+                store2["lat"], store2["lon"]
+            )
+            
+            # 如果距离小于阈值，认为是同一家店
+            if distance < distance_threshold:
+                nearby_stores.append((j, store2))
+        
+        # 在距离很近的门店中，保留名称最长的那个
+        if len(nearby_stores) > 1:
+            # 按名称长度排序，保留名称最长的
+            nearby_stores.sort(key=lambda x: len(x[1].get("name", "")), reverse=True)
+            best_idx, best_store = nearby_stores[0]
+            
+            # 标记其他门店为重复
+            for idx, _ in nearby_stores[1:]:
+                removed_indices.add(idx)
+            
+            result.append(best_store)
+        else:
+            # 没有重复，直接保留
+            result.append(store1)
+    
+    return result
 
 
 def search_poi(city: str, keyword: str, max_pages: int = 10) -> List[Dict]:
@@ -121,6 +182,13 @@ def search_poi(city: str, keyword: str, max_pages: int = 10) -> List[Dict]:
         # 如果重试失败，退出循环
         if not success:
             break
+    
+    # 对搜索结果进行去重
+    if stores:
+        original_count = len(stores)
+        stores = deduplicate_stores(stores)
+        if len(stores) < original_count:
+            print(f"  去重: {keyword} 从 {original_count} 个门店去重到 {len(stores)} 个门店")
     
     print(f"找到 {keyword} 在 {city} 的 {len(stores)} 个门店")
     return stores
