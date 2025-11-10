@@ -194,6 +194,42 @@ def search_poi(city: str, keyword: str, max_pages: int = 10) -> List[Dict]:
     return stores
 
 
+def search_brands_with_progress(city: str, brands: List[str], progress_callback=None) -> Dict[str, List[Dict]]:
+    """
+    搜索多个品牌的门店（支持进度回调）
+    
+    Args:
+        city: 城市名称
+        brands: 品牌名称列表
+        progress_callback: 进度回调函数，参数为 (brand, current, total, message)
+    
+    Returns:
+        字典，键为品牌名，值为该品牌的门店列表
+    """
+    brand_stores = {}
+    total_brands = len(brands)
+    
+    for idx, brand in enumerate(brands):
+        if progress_callback:
+            progress_callback(brand, idx + 1, total_brands, f'正在搜索 {brand}...')
+        
+        stores = search_poi(city, brand)
+        if stores:
+            brand_stores[brand] = stores
+            if progress_callback:
+                progress_callback(brand, idx + 1, total_brands, f'{brand} 找到 {len(stores)} 个门店')
+        else:
+            if progress_callback:
+                progress_callback(brand, idx + 1, total_brands, f'警告: 未找到 {brand} 在 {city} 的门店')
+            brand_stores[brand] = []
+        
+        # 品牌之间的延迟，避免触发限流
+        if idx < len(brands) - 1:  # 最后一个品牌不需要延迟
+            time.sleep(REQUEST_DELAY * 2)  # 品牌之间延迟稍长一些
+    
+    return brand_stores
+
+
 def search_brands(city: str, brands: List[str]) -> Dict[str, List[Dict]]:
     """
     搜索多个品牌的门店
