@@ -4,7 +4,7 @@
 import json
 from typing import List, Dict
 from datetime import datetime
-from config import AMAP_API_KEY
+from config import AMAP_API_KEY, AMAP_JS_KEY, AMAP_SECURITY_CODE
 
 
 def output_json(clusters: List[Dict], filename: str = None) -> str:
@@ -195,7 +195,13 @@ def output_html(clusters: List[Dict], city: str, filename: str = "map.html"):
         <div id="clusterList"></div>
     </div>
     
-    <script src="https://webapi.amap.com/maps?v=2.0&key=""" + AMAP_API_KEY + """"></script>
+    <script type="text/javascript">
+        // 高德地图安全密钥配置（JS API 2.0 必须）
+        window._AMapSecurityConfig = {
+            securityJsCode: '""" + AMAP_SECURITY_CODE + """'
+        };
+    </script>
+    <script src="https://webapi.amap.com/maps?v=2.0&key=""" + AMAP_JS_KEY + """"></script>
     <script>
         // 商圈数据
         const clusters = """ + clusters_json + """;
@@ -518,7 +524,13 @@ def output_html_string(clusters: List[Dict], city: str) -> str:
         <div id="clusterList"></div>
     </div>
     
-    <script src="https://webapi.amap.com/maps?v=2.0&key=""" + AMAP_API_KEY + """"></script>
+    <script type="text/javascript">
+        // 高德地图安全密钥配置（JS API 2.0 必须）
+        window._AMapSecurityConfig = {
+            securityJsCode: '""" + AMAP_SECURITY_CODE + """'
+        };
+    </script>
+    <script src="https://webapi.amap.com/maps?v=2.0&key=""" + AMAP_JS_KEY + """"></script>
     <script>
         // 商圈数据
         const clusters = """ + clusters_json + """;

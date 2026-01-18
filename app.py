@@ -11,7 +11,7 @@ from datetime import datetime
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, Response, stream_with_context
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
-from amap_api import search_brands_with_progress
+from amap_api import search_brands_with_progress, search_brands
 from cluster_finder import find_clusters
 from output import output_html_string
 from config import DEFAULT_DISTANCE_THRESHOLD, AMAP_API_KEY
@@ -196,7 +196,7 @@ def api_search_stream():
             
             if len(brands_with_stores) < len(brands):
                 missing_brands = set(brands) - set(brands_with_stores)
-                yield f"data: {json.dumps({'type': 'progress', 'stage': 'searching', 'message': f'警告: 以下品牌未找到门店: {", ".join(missing_brands)}', 'progress': 40})}\n\n"
+                yield f"""data: {json.dumps({'type': 'progress', 'stage': 'searching', 'message': f'警告: 以下品牌未找到门店: {", ".join(missing_brands)}', 'progress': 40})}\n\n"""
             
             # 发送开始查找商圈消息
             yield f"data: {json.dumps({'type': 'progress', 'stage': 'clustering', 'message': '正在查找符合条件的商圈...', 'progress': 40})}\n\n"
