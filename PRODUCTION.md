@@ -51,8 +51,10 @@ sudo systemctl status cluster-finder
 ### 环境变量（.env文件）
 
 ```env
-# 必需配置
-AMAP_API_KEY=your_api_key
+# 必需配置 - 高德地图API
+AMAP_API_KEY=your_web_service_api_key      # Web服务类型Key（POI搜索用）
+AMAP_JS_KEY=your_js_api_key                # Web端(JS API)类型Key（地图显示用）
+AMAP_SECURITY_CODE=your_security_code      # JS API安全密钥（地图显示必须）
 
 # 生产环境必需修改
 SECRET_KEY=your-secret-key-change-this
@@ -63,6 +65,8 @@ PORT=5002
 WORKERS=4
 FLASK_DEBUG=False
 ```
+
+> 💡 配置模板：`cp .env.example .env`
 
 ### 工作进程数建议
 

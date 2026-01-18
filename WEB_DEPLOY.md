@@ -21,18 +21,36 @@ pip install -r requirements.txt
 ```
 
 2. 配置环境变量（创建或编辑 `.env` 文件）：
+```bash
+# 复制配置模板
+cp .env.example .env
+# 编辑配置
+nano .env
+```
+
 ```env
 # 高德地图API密钥（必需）
-AMAP_API_KEY=your_amap_api_key_here
+# Web服务 Key（用于POI搜索，服务平台选择"Web服务"）
+AMAP_API_KEY=your_web_service_api_key_here
+
+# Web端(JS API) Key（用于地图显示，服务平台选择"Web端(JS API)"）
+AMAP_JS_KEY=your_js_api_key_here
+
+# JS API 安全密钥（JS API 2.0必须，否则地图不显示）
+AMAP_SECURITY_CODE=your_security_code_here
 
 # Web服务配置（可选）
 SECRET_KEY=your-secret-key-change-this-in-production
 WEB_USERNAME=admin
 WEB_PASSWORD=admin123
-PORT=5000
+PORT=5002
 FLASK_DEBUG=False
 DEFAULT_DISTANCE_THRESHOLD=200
 ```
+
+> ⚠️ **重要**：高德地图需要配置两种不同类型的Key：
+> - `AMAP_API_KEY`：Web服务类型，用于后端API调用
+> - `AMAP_JS_KEY` + `AMAP_SECURITY_CODE`：Web端(JS API)类型，用于前端地图显示
 
 ## 启动服务
 
@@ -292,9 +310,11 @@ server {
    - 检查 `.env` 文件中的用户名和密码配置
    - 确认密码没有多余的空格
 
-2. **地图无法显示**
-   - 检查高德地图API密钥是否正确配置
-   - 检查浏览器控制台是否有错误信息
+2. **地图无法显示（只显示点，不显示底图）**
+   - 检查 `AMAP_JS_KEY` 是否是 **Web端(JS API)** 类型的Key（不是Web服务类型）
+   - 检查 `AMAP_SECURITY_CODE` 是否正确配置（JS API 2.0必须）
+   - 如果报错 `USERKEY_PLAT_NOMATCH`：说明Key类型不匹配，需要创建正确类型的Key
+   - 检查浏览器控制台是否有其他错误信息
    - 确认API密钥配额是否充足
 
 3. **搜索失败**
