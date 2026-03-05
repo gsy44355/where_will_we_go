@@ -2,462 +2,788 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>商圈搜索 - 商圈查找工具</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商圈查找工具</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --pri: #667eea;
+            --pri2: #764ba2;
+            --grad: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --bg: #f0f2f5;
+            --card: #fff;
+            --text: #1a1a2e;
+            --text2: #555;
+            --text3: #999;
+            --border: #e8e8ee;
+            --radius: 14px;
+            --shadow: 0 4px 24px rgba(0,0,0,0.06);
+            --shadow-hover: 0 8px 32px rgba(102,126,234,0.15);
         }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: #f5f5f5;
+            background: var(--bg);
             min-height: 100vh;
-            padding-bottom: 20px;
+            color: var(--text);
         }
+
+        /* ── Header ── */
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--grad);
             color: white;
-            padding: 15px 20px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        .header-content {
+            padding: 0 24px;
+            height: 56px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            max-width: 1200px;
-            margin: 0 auto;
+            justify-content: space-between;
+            box-shadow: 0 4px 20px rgba(102,126,234,0.3);
+            position: relative;
+            z-index: 1000;
         }
-        .header h1 {
-            font-size: 20px;
-            font-weight: 600;
+        .header-left { display: flex; align-items: center; gap: 10px; }
+        .header-logo {
+            width: 30px; height: 30px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
         }
-        .btn-logout {
-            background: rgba(255, 255, 255, 0.2);
+        .header-logo svg { width: 16px; height: 16px; }
+        .header h1 { font-size: 16px; font-weight: 600; letter-spacing: -0.2px; }
+        .header-actions { display: flex; gap: 8px; align-items: center; }
+        .hdr-btn {
+            background: rgba(255,255,255,0.15);
             color: white;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            padding: 6px 15px;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 6px 16px;
             border-radius: 20px;
-            font-size: 14px;
+            font-size: 13px;
             cursor: pointer;
-            transition: background 0.3s;
+            text-decoration: none;
+            transition: all 0.25s ease;
+            backdrop-filter: blur(4px);
         }
-        .btn-logout:hover {
-            background: rgba(255, 255, 255, 0.3);
+        .hdr-btn:hover { background: rgba(255,255,255,0.28); transform: translateY(-1px); }
+        .hdr-btn-primary {
+            background: white; color: var(--pri);
+            border-color: white; font-weight: 600;
         }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
+        .hdr-btn-primary:hover { background: #f0f0ff; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+
+        /* ── Animations ── */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        @keyframes cardPop {
+            from { opacity: 0; transform: translateY(16px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* ── Search Section ── */
+        .search-section {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px 20px;
+            min-height: calc(100vh - 56px);
+            background:
+                radial-gradient(ellipse at 20% 50%, rgba(102,126,234,0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(118,75,162,0.05) 0%, transparent 50%),
+                var(--bg);
         }
         .search-card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        .form-group label {
-            display: block;
-            color: #333;
-            font-size: 14px;
-            font-weight: 500;
-            margin-bottom: 8px;
-        }
-        .form-group input {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 36px;
             width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: border-color 0.3s;
+            max-width: 480px;
+            box-shadow: var(--shadow);
+            animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+        .search-card h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 6px;
+            letter-spacing: -0.3px;
+        }
+        .search-subtitle {
+            font-size: 13px; color: var(--text3);
+            margin-bottom: 28px;
+        }
+
+        .form-row { display: flex; gap: 12px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label {
+            display: block; font-size: 13px; font-weight: 600;
+            color: var(--text2); margin-bottom: 6px;
+            transition: color 0.2s;
+        }
+        .form-group:focus-within label { color: var(--pri); }
+        .form-group input {
+            width: 100%; padding: 11px 14px;
+            border: 2px solid var(--border);
+            border-radius: 12px; font-size: 15px;
+            background: #fafafc;
+            transition: all 0.25s ease;
         }
         .form-group input:focus {
-            outline: none;
-            border-color: #667eea;
+            outline: none; border-color: var(--pri);
+            box-shadow: 0 0 0 4px rgba(102,126,234,0.1);
+            background: #fff;
         }
-        .form-group small {
-            display: block;
-            color: #999;
-            font-size: 12px;
-            margin-top: 5px;
-        }
+        .form-group input::placeholder { color: #c0c0c0; }
+        .form-group small { display: block; color: #b0b0b0; font-size: 11px; margin-top: 5px; }
+
         .btn-search {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            margin-top: 10px;
+            width: 100%; padding: 13px;
+            background: var(--grad);
+            color: white; border: none; border-radius: 12px;
+            font-size: 15px; font-weight: 600; cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative; overflow: hidden;
+        }
+        .btn-search::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+            transform: translateX(-100%);
         }
         .btn-search:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 8px 25px rgba(102,126,234,0.35);
         }
+        .btn-search:hover::after {
+            transform: translateX(100%);
+            transition: transform 0.6s ease;
+        }
+        .btn-search:active { transform: translateY(0); }
         .btn-search:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
+            opacity: 0.6; cursor: not-allowed;
+            transform: none !important; box-shadow: none !important;
         }
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 20px;
-            color: #667eea;
-        }
-        .loading.show {
-            display: block;
-        }
-        .loading-spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
+        .btn-search .spinner {
+            display: inline-block; width: 16px; height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
+            animation: spin 0.6s linear infinite;
+            vertical-align: middle;
+            margin-right: 6px;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .progress-container {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f9f9f9;
-            border-radius: 10px;
+
+        /* ── Progress ── */
+        .progress-area {
+            margin-top: 28px;
+            animation: fadeUp 0.3s ease both;
         }
         .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: #e0e0e0;
-            border-radius: 4px;
-            overflow: hidden;
-            margin-bottom: 10px;
+            height: 6px; background: #e8e8ee;
+            border-radius: 3px; overflow: hidden;
         }
         .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            transition: width 0.3s ease;
-            border-radius: 4px;
+            height: 100%; width: 0%;
+            background: var(--grad);
+            border-radius: 3px;
+            transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+        }
+        .progress-fill::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s ease-in-out infinite;
         }
         .progress-text {
-            font-size: 14px;
-            color: #666;
-            margin-top: 5px;
+            font-size: 13px; color: var(--text2);
+            margin-top: 10px; font-weight: 500;
         }
         .progress-detail {
-            font-size: 12px;
-            color: #999;
-            margin-top: 5px;
+            font-size: 12px; color: var(--text3); margin-top: 3px;
         }
+        .log-toggle {
+            font-size: 11px; color: var(--pri);
+            cursor: pointer; margin-top: 8px;
+            display: inline-block;
+            user-select: none;
+        }
+        .log-toggle:hover { text-decoration: underline; }
         .log-container {
-            margin-top: 15px;
-            max-height: 300px;
-            overflow-y: auto;
-            background: #f5f5f5;
-            border-radius: 8px;
-            padding: 10px;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            text-align: left;
+            margin-top: 8px; max-height: 160px; overflow-y: auto;
+            background: #f5f6f8; border-radius: 10px; padding: 10px 12px;
+            font-family: 'SF Mono', 'Menlo', 'Courier New', monospace;
+            font-size: 11px;
+            border: 1px solid var(--border);
         }
         .log-item {
-            padding: 4px 0;
-            color: #666;
-            border-bottom: 1px solid #e0e0e0;
+            padding: 3px 0; color: #888;
+            border-bottom: 1px solid #eee;
+            animation: fadeIn 0.15s ease;
         }
-        .log-item:last-child {
-            border-bottom: none;
+        .log-item:last-child { border-bottom: none; }
+        .log-item.searching { color: var(--pri); }
+        .log-item.clustering { color: var(--pri2); }
+        .log-item.generating { color: #44aa44; }
+
+        .error-msg {
+            background: linear-gradient(135deg, #fff5f5, #ffe8e8);
+            color: #d63031;
+            padding: 12px 16px; border-radius: 12px;
+            font-size: 13px; font-weight: 500;
+            margin-top: 18px;
+            border: 1px solid #ffd0d0;
+            animation: fadeUp 0.3s ease;
         }
-        .log-item.searching {
-            color: #667eea;
+
+        /* ── Result Section ── */
+        .result-section {
+            height: calc(100vh - 56px);
+            display: flex; flex-direction: column;
         }
-        .log-item.clustering {
-            color: #764ba2;
+
+        .result-info-bar {
+            background: var(--card);
+            padding: 10px 20px;
+            display: flex; align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
         }
-        .log-item.generating {
-            color: #44aa44;
+        .info-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+        .info-tag {
+            background: linear-gradient(135deg, #f0f2ff, #f5f0ff);
+            padding: 4px 12px;
+            border-radius: 12px; font-size: 12px;
+            color: #555; font-weight: 500;
+            border: 1px solid rgba(102,126,234,0.1);
         }
-        .error-message {
-            background: #fee;
-            color: #c33;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 14px;
-            margin-top: 15px;
-            display: none;
+
+        .result-body { flex: 1; display: flex; overflow: hidden; }
+
+        .map-container { flex: 1; min-width: 0; position: relative; }
+        .map-loading {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            background: var(--bg); color: var(--text3); font-size: 14px;
+            gap: 12px;
         }
-        .error-message.show {
-            display: block;
+        .map-spinner {
+            width: 32px; height: 32px;
+            border: 3px solid #e0e0e0;
+            border-top-color: var(--pri);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
         }
+
+        .cluster-sidebar {
+            width: 370px; overflow-y: auto;
+            background: #f7f8fa;
+            border-left: 1px solid var(--border);
+            padding: 16px;
+        }
+        .sidebar-header {
+            font-size: 14px; font-weight: 700; color: var(--text);
+            margin-bottom: 12px; padding-bottom: 10px;
+            border-bottom: 2px solid var(--border);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .sidebar-count {
+            background: var(--grad);
+            color: white; font-size: 11px;
+            padding: 2px 8px; border-radius: 10px;
+            font-weight: 600;
+        }
+
+        /* ── Cluster Cards ── */
+        .cluster-card {
+            background: var(--card); border-radius: var(--radius);
+            padding: 14px 16px; margin-bottom: 10px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .cluster-card:hover {
+            border-color: rgba(102,126,234,0.3);
+        }
+        .cluster-card.active {
+            border-color: var(--pri);
+            background: #f6f8ff;
+        }
+        .card-top {
+            display: flex; justify-content: space-between;
+            align-items: center; margin-bottom: 10px;
+        }
+        .card-label {
+            display: flex; align-items: center; gap: 8px;
+            font-weight: 700; font-size: 14px; color: var(--text);
+        }
+        .card-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%; flex-shrink: 0;
+            box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
+        }
+        .card-dist {
+            font-size: 11px; color: var(--text3); font-weight: 500;
+            background: #f0f2f5; padding: 3px 10px; border-radius: 10px;
+        }
+        .card-stores { display: flex; flex-direction: column; gap: 8px; }
+        .store-row {
+            display: flex; align-items: center; gap: 8px; font-size: 13px;
+        }
+        .brand-tag {
+            font-size: 10px; font-weight: 700; letter-spacing: 0.2px;
+            padding: 2px 8px; border-radius: 4px;
+            color: white; flex-shrink: 0; white-space: nowrap;
+        }
+        .store-name { color: var(--text); font-weight: 500; word-break: break-all; }
+        .store-addr {
+            color: #bbb; font-size: 11px; padding-left: 48px;
+            margin-top: -2px;
+        }
+
+        /* ── Mobile ── */
         @media (max-width: 768px) {
-            .container {
-                padding: 15px;
-            }
+            .header { height: 50px; padding: 0 16px; }
+            .header h1 { font-size: 15px; }
+            .header-logo { display: none; }
+
+            .search-section { padding: 20px 16px; }
             .search-card {
-                padding: 20px;
+                padding: 28px 20px; border-radius: 16px;
+                max-width: 100%;
             }
-            .header h1 {
-                font-size: 18px;
+            .search-card h2 { font-size: 20px; }
+            .form-row { flex-direction: column; gap: 0; }
+
+            .result-body { flex-direction: column; }
+            .map-container { height: 42vh; flex: none; }
+            .cluster-sidebar {
+                width: 100%; flex: 1;
+                border-left: none; border-top: 1px solid var(--border);
+                padding: 12px;
             }
+            .result-info-bar {
+                flex-direction: column; gap: 4px;
+                align-items: flex-start; padding: 8px 14px;
+            }
+            .info-tags { gap: 4px; }
+            .info-tag { font-size: 11px; padding: 3px 8px; }
+            .cluster-card { padding: 12px 14px; }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <div class="header-content">
+        <div class="header-left">
+            <div class="header-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                </svg>
+            </div>
             <h1>商圈查找工具</h1>
-            <a href="/logout" class="btn-logout">退出</a>
+        </div>
+        <div class="header-actions">
+            <button id="newSearchBtn" class="hdr-btn hdr-btn-primary" style="display:none" onclick="backToSearch()">新搜索</button>
+            <a href="/logout" class="hdr-btn">退出</a>
         </div>
     </div>
-    
-    <div class="container">
+
+    <!-- ── Search ── -->
+    <div id="searchSection" class="search-section">
         <div class="search-card">
-            <h2 style="margin-bottom: 20px; color: #333;">搜索商圈</h2>
+            <h2>搜索商圈</h2>
+            <p class="search-subtitle">输入城市和品牌，查找品牌聚集的商圈</p>
             <form id="searchForm">
-                <div class="form-group">
-                    <label for="city">城市名称</label>
-                    <input type="text" id="city" name="city" placeholder="例如：北京、上海、深圳" required>
-                    <small>请输入要搜索的城市名称</small>
+                <div class="form-row">
+                    <div class="form-group" style="flex:1">
+                        <label for="city">城市名称</label>
+                        <input type="text" id="city" placeholder="深圳、北京、上海..." required>
+                    </div>
+                    <div class="form-group" style="width:130px">
+                        <label for="threshold">距离阈值(米)</label>
+                        <input type="number" id="threshold" value="200" min="50" max="5000" step="50" required>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="brands">品牌列表</label>
-                    <input type="text" id="brands" name="brands" placeholder="例如：优衣库,丰茂烤肉,海底捞（支持中文逗号）" required>
-                    <small>多个品牌用逗号分隔，支持中文逗号（会自动转换）</small>
-                </div>
-                <div class="form-group">
-                    <label for="threshold">距离阈值（米）</label>
-                    <input type="number" id="threshold" name="threshold" value="200" min="50" max="5000" step="50" required>
-                    <small>门店之间的最大距离，默认200米</small>
+                    <input type="text" id="brands" placeholder="优衣库, 海底捞, 星巴克..." required>
+                    <small>多个品牌用逗号分隔，支持中文逗号</small>
                 </div>
                 <button type="submit" class="btn-search" id="searchBtn">开始搜索</button>
-                <div class="error-message" id="errorMessage"></div>
             </form>
-            
-            <div class="loading" id="loading">
-                <div class="loading-spinner"></div>
-                <div class="progress-container">
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
-                    </div>
-                    <div class="progress-text" id="progressText">准备开始...</div>
-                    <div class="progress-detail" id="progressDetail"></div>
-                    <div class="log-container" id="logContainer" style="display: none;"></div>
+
+            <div id="progressArea" class="progress-area" style="display:none">
+                <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+                <div class="progress-text" id="progressText">准备开始...</div>
+                <div class="progress-detail" id="progressDetail"></div>
+                <span class="log-toggle" id="logToggle" style="display:none" onclick="toggleLog()">查看详细日志</span>
+                <div class="log-container" id="logContainer" style="display:none"></div>
+            </div>
+            <div id="errorMessage" class="error-msg" style="display:none"></div>
+        </div>
+    </div>
+
+    <!-- ── Results ── -->
+    <div id="resultSection" class="result-section" style="display:none">
+        <div class="result-info-bar">
+            <div class="info-tags" id="infoTags"></div>
+        </div>
+        <div class="result-body">
+            <div id="mapContainer" class="map-container">
+                <div class="map-loading" id="mapLoading">
+                    <div class="map-spinner"></div>
+                    <span>加载地图中...</span>
                 </div>
+            </div>
+            <div id="clusterSidebar" class="cluster-sidebar">
+                <div class="sidebar-header" id="sidebarHeader">商圈列表</div>
+                <div id="clusterList"></div>
             </div>
         </div>
     </div>
-    
-    <script>
-        const form = document.getElementById('searchForm');
-        const errorMessage = document.getElementById('errorMessage');
-        const searchBtn = document.getElementById('searchBtn');
-        const loading = document.getElementById('loading');
-        const brandsInput = document.getElementById('brands');
 
-        // 恢复上次搜索参数
-        try {
-            const savedCity = localStorage.getItem('search_city');
-            const savedBrands = localStorage.getItem('search_brands');
-            const savedThreshold = localStorage.getItem('search_threshold');
-            if (savedCity) document.getElementById('city').value = savedCity;
-            if (savedBrands) document.getElementById('brands').value = savedBrands;
-            if (savedThreshold) document.getElementById('threshold').value = savedThreshold;
-        } catch(e) {}
+<script>
+const AMAP_JS_KEY = '{{ amap_js_key }}';
+const AMAP_SECURITY_CODE = '{{ amap_security_code }}';
 
-        // 自动将中文逗号转换为英文逗号
-        brandsInput.addEventListener('input', function(e) {
-            let value = this.value;
-            // 将中文逗号（，）替换为英文逗号（,）
-            value = value.replace(/，/g, ',');
-            // 将中文分号（；）也替换为英文逗号（,）
-            value = value.replace(/；/g, ',');
-            if (value !== this.value) {
-                this.value = value;
-            }
-        });
-        
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const city = document.getElementById('city').value.trim();
-            // 确保品牌列表中的逗号都是英文逗号
-            let brands = document.getElementById('brands').value.trim();
-            brands = brands.replace(/，/g, ',').replace(/；/g, ',');
-            const threshold = parseFloat(document.getElementById('threshold').value);
-            
-            if (!city || !brands) {
-                showError('请填写所有必填项');
-                return;
-            }
-            
-            // 保存搜索参数
-            try {
-                localStorage.setItem('search_city', city);
-                localStorage.setItem('search_brands', brands);
-                localStorage.setItem('search_threshold', threshold);
-            } catch(e) {}
+const COLORS = [
+    '#6366f1','#10b981','#f59e0b','#ef4444',
+    '#8b5cf6','#06b6d4','#f97316','#ec4899',
+    '#14b8a6','#a855f7','#3b82f6','#84cc16'
+];
 
-            const searchStartTime = Date.now();
-            searchBtn.disabled = true;
-            searchBtn.textContent = '搜索中...';
-            errorMessage.classList.remove('show');
-            loading.classList.add('show');
-            
-            // 更新进度显示
-            const progressFill = document.getElementById('progressFill');
-            const progressText = document.getElementById('progressText');
-            const progressDetail = document.getElementById('progressDetail');
-            const logContainer = document.getElementById('logContainer');
-            
-            progressFill.style.width = '0%';
-            progressText.textContent = '准备开始...';
-            progressDetail.textContent = '';
-            logContainer.innerHTML = '';
-            logContainer.style.display = 'none';
-            
-            // 使用EventSource接收SSE进度更新
-            const requestData = JSON.stringify({
-                city: city,
-                brands: brands,
-                threshold: threshold
-            });
-            
-            // 使用fetch发送POST请求，然后通过EventSource接收流式响应
-            // 注意：EventSource只支持GET，所以我们需要使用fetch的stream模式
-            fetch('/api/search/stream', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: requestData
-            }).then(response => {
-                if (!response.ok) {
-                    throw new Error('请求失败');
-                }
-                
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                let buffer = '';
-                
-                function readStream() {
-                    reader.read().then(({ done, value }) => {
-                        if (done) {
-                            return;
-                        }
-                        
-                        buffer += decoder.decode(value, { stream: true });
-                        const lines = buffer.split('\n');
-                        buffer = lines.pop() || ''; // 保留最后不完整的行
-                        
-                        for (const line of lines) {
-                            if (line.startsWith('data: ')) {
-                                try {
-                                    const data = JSON.parse(line.substring(6));
-                                    handleProgress(data);
-                                } catch (e) {
-                                    console.error('解析进度数据失败:', e);
-                                }
-                            }
-                        }
-                        
-                        readStream();
-                    }).catch(error => {
-                        console.error('读取流失败:', error);
-                        showError('读取进度失败，请稍后重试');
-                        searchBtn.disabled = false;
-                        searchBtn.textContent = '开始搜索';
-                        loading.classList.remove('show');
-                    });
-                }
-                
-                readStream();
-            }).catch(error => {
-                console.error('请求失败:', error);
-                showError('网络错误，请稍后重试');
-                searchBtn.disabled = false;
-                searchBtn.textContent = '开始搜索';
-                loading.classList.remove('show');
-            });
-            
-            function handleProgress(data) {
-                if (data.type === 'log') {
-                    // 显示日志消息
-                    logContainer.style.display = 'block';
-                    const logItem = document.createElement('div');
-                    logItem.className = `log-item ${data.stage || ''}`;
-                    logItem.textContent = data.message;
-                    logContainer.appendChild(logItem);
-                    // 自动滚动到底部
-                    logContainer.scrollTop = logContainer.scrollHeight;
-                } else if (data.type === 'progress') {
-                    // 更新进度条
-                    const progress = data.progress || 0;
-                    progressFill.style.width = progress + '%';
-                    progressText.textContent = data.message || '处理中...';
-                    
-                    if (data.brand) {
-                        progressDetail.textContent = `${data.brand} (${data.current}/${data.total})`;
-                    } else {
-                        progressDetail.textContent = '';
-                    }
-                } else if (data.type === 'complete') {
-                    // 搜索完成
-                    progressFill.style.width = '100%';
-                    progressText.textContent = '搜索完成！';
-                    const elapsed = ((Date.now() - searchStartTime) / 1000).toFixed(1);
-                    progressDetail.textContent = `找到 ${data.result.cluster_count} 个商圈，耗时 ${elapsed} 秒`;
-                    try { sessionStorage.setItem('searchElapsed', elapsed); } catch(e) {}
-                    
-                    // 保存结果
-                    try {
-                        sessionStorage.setItem('searchResult', JSON.stringify(data.result));
-                        const htmlContent = data.html_content || '';
-                        if (htmlContent) {
-                            sessionStorage.setItem('htmlContent', htmlContent);
-                        }
-                    } catch (e) {
-                        console.error('保存到sessionStorage失败:', e);
-                        try {
-                            localStorage.setItem('searchResult', JSON.stringify(data.result));
-                            localStorage.setItem('htmlContent', data.html_content || '');
-                        } catch (e2) {
-                            console.error('保存到localStorage也失败:', e2);
-                        }
-                    }
-                    
-                    // 延迟一下再跳转，让用户看到完成信息
-                    setTimeout(() => {
-                        window.location.href = '/result';
-                    }, 500);
-                } else if (data.type === 'error') {
-                    // 发生错误
-                    showError(data.message || '搜索失败，请稍后重试');
-                    searchBtn.disabled = false;
-                    searchBtn.textContent = '开始搜索';
-                    loading.classList.remove('show');
-                }
-            }
-        });
-        
-        function showError(message) {
-            errorMessage.textContent = message;
-            errorMessage.classList.add('show');
+const $ = id => document.getElementById(id);
+let mapInstance = null;
+let clusterGroups = [];
+let logVisible = false;
+
+/* ── LocalStorage restore ── */
+try {
+    const sc = localStorage.getItem('search_city');
+    const sb = localStorage.getItem('search_brands');
+    const st = localStorage.getItem('search_threshold');
+    if (sc) $('city').value = sc;
+    if (sb) $('brands').value = sb;
+    if (st) $('threshold').value = st;
+} catch(e) {}
+
+/* ── Chinese comma auto-convert ── */
+$('brands').addEventListener('input', function() {
+    this.value = this.value.replace(/[，；]/g, ',');
+});
+
+/* ── Helpers ── */
+function showError(msg) {
+    const el = $('errorMessage');
+    el.textContent = msg;
+    el.style.display = 'block';
+}
+
+function resetSearch() {
+    $('searchBtn').disabled = false;
+    $('searchBtn').innerHTML = '开始搜索';
+}
+
+function backToSearch() {
+    $('resultSection').style.display = 'none';
+    $('searchSection').style.display = 'flex';
+    $('newSearchBtn').style.display = 'none';
+    $('progressArea').style.display = 'none';
+    $('errorMessage').style.display = 'none';
+    if (mapInstance) { mapInstance.destroy(); mapInstance = null; }
+    clusterGroups = [];
+}
+
+function toggleLog() {
+    logVisible = !logVisible;
+    $('logContainer').style.display = logVisible ? 'block' : 'none';
+    $('logToggle').textContent = logVisible ? '收起日志' : '查看详细日志';
+}
+
+/* ── AMap Loader ── */
+function loadAMap() {
+    return new Promise((resolve, reject) => {
+        if (window.AMap) { resolve(); return; }
+        if (AMAP_SECURITY_CODE) {
+            window._AMapSecurityConfig = { securityJsCode: AMAP_SECURITY_CODE };
         }
-    </script>
+        const s = document.createElement('script');
+        s.src = 'https://webapi.amap.com/maps?v=2.0&key=' + AMAP_JS_KEY;
+        s.onload = resolve;
+        s.onerror = () => reject(new Error('高德地图JS加载失败'));
+        document.head.appendChild(s);
+    });
+}
+
+/* ── Map Rendering ── */
+function createIcon(color, label) {
+    /* Pin shape: 30x40, anchor at bottom center */
+    const w = 30, h = 40;
+    const svg = '<svg width="'+w+'" height="'+h+'" xmlns="http://www.w3.org/2000/svg">'
+        + '<defs><filter id="ds" x="-30%" y="-10%" width="160%" height="140%">'
+        + '<feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.25"/></filter></defs>'
+        + '<path d="M15 38 C15 38 3 23 3 14 A12 12 0 1 1 27 14 C27 23 15 38 15 38Z" '
+        + 'fill="'+color+'" stroke="white" stroke-width="2" filter="url(#ds)"/>'
+        + '<text x="15" y="18" font-family="Arial" font-size="12" font-weight="bold" '
+        + 'fill="white" text-anchor="middle">'+label+'</text></svg>';
+    const url = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+    return new AMap.Icon({
+        image: url,
+        size: new AMap.Size(w, h),
+        imageSize: new AMap.Size(w, h),
+        imageOffset: new AMap.Pixel(0, 0)
+    });
+}
+
+function renderMap(clusters) {
+    $('mapLoading').style.display = 'none';
+
+    let allLat = [], allLon = [];
+    clusters.forEach(c => Object.values(c.brands).forEach(s => { allLat.push(s.lat); allLon.push(s.lon); }));
+    const cLat = allLat.reduce((a,b)=>a+b,0) / allLat.length;
+    const cLon = allLon.reduce((a,b)=>a+b,0) / allLon.length;
+
+    mapInstance = new AMap.Map('mapContainer', {
+        zoom: 13, center: [cLon, cLat]
+    });
+    clusterGroups = [];
+
+    clusters.forEach((cluster, ci) => {
+        const color = COLORS[ci % COLORS.length];
+        const stores = Object.entries(cluster.brands);
+        const group = { markers: [] };
+
+        stores.forEach(([brand, store], si) => {
+            const marker = new AMap.Marker({
+                position: [store.lon, store.lat],
+                title: store.name,
+                icon: createIcon(color, si + 1),
+                offset: new AMap.Pixel(-15, -40),
+                zIndex: 100 + ci
+            });
+
+            const iwContent = '<div style="padding:10px 12px;min-width:180px;font-family:-apple-system,BlinkMacSystemFont,sans-serif">'
+                + '<h4 style="margin:0 0 6px;color:'+color+';font-size:14px">'+store.name+'</h4>'
+                + '<p style="margin:3px 0;font-size:12px;color:#555"><span style="display:inline-block;background:'+color+';color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600;margin-right:4px">'+brand+'</span></p>'
+                + '<p style="margin:4px 0 0;font-size:12px;color:#999">'+store.address+'</p></div>';
+
+            const iw = new AMap.InfoWindow({ content: iwContent, offset: new AMap.Pixel(0, -24) });
+            marker.on('click', () => { iw.open(mapInstance, marker.getPosition()); highlightCard(ci); });
+            mapInstance.add(marker);
+            group.markers.push(marker);
+        });
+
+        if (stores.length > 1) {
+            const path = stores.map(([_,s]) => [s.lon, s.lat]);
+            const pl = new AMap.Polyline({
+                path: path, strokeColor: color,
+                strokeWeight: 3, strokeOpacity: 0.45,
+                strokeStyle: 'dashed',
+                zIndex: 10 + ci
+            });
+            mapInstance.add(pl);
+            group.polyline = pl;
+        }
+        clusterGroups.push(group);
+    });
+
+    mapInstance.setFitView(null, false, [50, 50, 50, 50]);
+}
+
+/* ── Cluster List ── */
+function renderClusterList(clusters) {
+    $('sidebarHeader').innerHTML = '商圈列表 <span class="sidebar-count">' + clusters.length + '</span>';
+    const list = $('clusterList');
+    list.innerHTML = '';
+
+    clusters.forEach((cluster, ci) => {
+        const color = COLORS[ci % COLORS.length];
+        const stores = Object.entries(cluster.brands);
+
+        const card = document.createElement('div');
+        card.className = 'cluster-card';
+        card.dataset.idx = ci;
+        card.innerHTML =
+            '<div class="card-top">'
+            + '<div class="card-label"><span class="card-dot" style="background:'+color+'"></span>商圈 #'+(ci+1)+'</div>'
+            + '<span class="card-dist">'+cluster.max_distance.toFixed(0)+' m</span>'
+            + '</div>'
+            + '<div class="card-stores">'
+            + stores.map(([brand, store]) =>
+                '<div>'
+                + '<div class="store-row"><span class="brand-tag" style="background:'+color+'">'+brand+'</span>'
+                + '<span class="store-name">'+store.name+'</span></div>'
+                + '<div class="store-addr">'+store.address+'</div>'
+                + '</div>'
+            ).join('')
+            + '</div>';
+
+        card.addEventListener('click', () => { highlightCard(ci); zoomTo(cluster, ci, color); });
+        list.appendChild(card);
+    });
+}
+
+function highlightCard(ci) {
+    document.querySelectorAll('.cluster-card').forEach(c => c.classList.remove('active'));
+    const card = document.querySelector('.cluster-card[data-idx="'+ci+'"]');
+    if (card) { card.classList.add('active'); card.scrollIntoView({ block: 'nearest' }); }
+}
+
+function zoomTo(cluster, ci, color) {
+    const stores = Object.values(cluster.brands);
+    const lat = stores.reduce((s,st) => s+st.lat, 0) / stores.length;
+    const lon = stores.reduce((s,st) => s+st.lon, 0) / stores.length;
+    mapInstance.setZoomAndCenter(16, [lon, lat], true);
+
+    if (clusterGroups[ci] && clusterGroups[ci].markers[0]) {
+        const first = Object.entries(cluster.brands)[0];
+        const iwContent = '<div style="padding:10px 12px;font-family:-apple-system,BlinkMacSystemFont,sans-serif">'
+            + '<h4 style="margin:0 0 6px;color:'+color+';font-size:14px">'+first[1].name+'</h4>'
+            + '<p style="margin:3px 0;font-size:12px"><span style="display:inline-block;background:'+color+';color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600">'+first[0]+'</span></p>'
+            + '<p style="margin:4px 0 0;font-size:12px;color:#999">'+first[1].address+'</p></div>';
+        new AMap.InfoWindow({ content: iwContent, offset: new AMap.Pixel(0, -24) })
+            .open(mapInstance, clusterGroups[ci].markers[0].getPosition());
+    }
+}
+
+/* ── Show Results ── */
+async function showResults(result, elapsed) {
+    $('searchSection').style.display = 'none';
+    $('resultSection').style.display = 'flex';
+    $('newSearchBtn').style.display = 'inline-block';
+
+    $('infoTags').innerHTML =
+        '<span class="info-tag">'+result.city+'</span>'
+        + '<span class="info-tag">'+result.brands.join(' / ')+'</span>'
+        + '<span class="info-tag">阈值 '+result.threshold+'m</span>'
+        + '<span class="info-tag">'+result.cluster_count+' 个商圈</span>'
+        + (elapsed ? '<span class="info-tag">耗时 '+elapsed+'s</span>' : '');
+
+    renderClusterList(result.clusters);
+
+    try {
+        await loadAMap();
+        renderMap(result.clusters);
+    } catch(e) {
+        $('mapLoading').innerHTML = '<span style="color:#d63031">地图加载失败: ' + e.message + '</span>';
+    }
+}
+
+/* ── Resize ── */
+window.addEventListener('resize', () => { if (mapInstance) mapInstance.resize(); });
+
+/* ── Search Submit ── */
+$('searchForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const city = $('city').value.trim();
+    let brands = $('brands').value.trim().replace(/[，；]/g, ',');
+    const threshold = parseFloat($('threshold').value);
+
+    if (!city || !brands) { showError('请填写所有必填项'); return; }
+
+    try {
+        localStorage.setItem('search_city', city);
+        localStorage.setItem('search_brands', brands);
+        localStorage.setItem('search_threshold', threshold);
+    } catch(e) {}
+
+    const t0 = Date.now();
+    $('searchBtn').disabled = true;
+    $('searchBtn').innerHTML = '<span class="spinner"></span>搜索中...';
+    $('errorMessage').style.display = 'none';
+
+    const progressArea = $('progressArea');
+    const progressFill = $('progressFill');
+    const progressText = $('progressText');
+    const progressDetail = $('progressDetail');
+    const logContainer = $('logContainer');
+
+    progressArea.style.display = 'block';
+    progressFill.style.width = '0%';
+    progressText.textContent = '准备开始...';
+    progressDetail.textContent = '';
+    logContainer.innerHTML = '';
+    logContainer.style.display = 'none';
+    logVisible = false;
+    $('logToggle').style.display = 'none';
+    $('logToggle').textContent = '查看详细日志';
+
+    fetch('/api/search/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ city, brands, threshold })
+    }).then(response => {
+        if (!response.ok) throw new Error('请求失败');
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = '';
+
+        function read() {
+            reader.read().then(({ done, value }) => {
+                if (done) return;
+                buf += decoder.decode(value, { stream: true });
+                const lines = buf.split('\n');
+                buf = lines.pop() || '';
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try { onSSE(JSON.parse(line.substring(6))); } catch(e) {}
+                    }
+                }
+                read();
+            }).catch(() => { showError('连接中断，请重试'); resetSearch(); });
+        }
+        read();
+    }).catch(() => { showError('网络错误，请重试'); resetSearch(); });
+
+    function onSSE(d) {
+        if (d.type === 'log') {
+            $('logToggle').style.display = 'inline-block';
+            const item = document.createElement('div');
+            item.className = 'log-item ' + (d.stage || '');
+            item.textContent = d.message;
+            logContainer.appendChild(item);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        } else if (d.type === 'progress') {
+            progressFill.style.width = (d.progress || 0) + '%';
+            progressText.textContent = d.message || '处理中...';
+            progressDetail.textContent = d.brand ? d.brand + ' (' + d.current + '/' + d.total + ')' : '';
+        } else if (d.type === 'complete') {
+            const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+            try {
+                sessionStorage.setItem('searchResult', JSON.stringify(d.result));
+                if (d.html_content) sessionStorage.setItem('htmlContent', d.html_content);
+                sessionStorage.setItem('searchElapsed', elapsed);
+            } catch(e) {}
+            resetSearch();
+            showResults(d.result, elapsed);
+        } else if (d.type === 'error') {
+            showError(d.message || '搜索失败');
+            resetSearch();
+        }
+    }
+});
+</script>
 </body>
 </html>
-

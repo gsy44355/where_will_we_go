@@ -13,7 +13,7 @@ from functools import wraps
 from amap_api import search_brands_with_progress, search_brands
 from cluster_finder import find_clusters
 from output import output_html_string
-from config import DEFAULT_DISTANCE_THRESHOLD, AMAP_API_KEY
+from config import DEFAULT_DISTANCE_THRESHOLD, AMAP_API_KEY, AMAP_JS_KEY, AMAP_SECURITY_CODE
 from log_capture import LogCapture
 
 app = Flask(__name__)
@@ -147,7 +147,9 @@ def logout():
 @login_required
 def search():
     """搜索页面"""
-    return render_template('search.html')
+    return render_template('search.html',
+                           amap_js_key=AMAP_JS_KEY or AMAP_API_KEY,
+                           amap_security_code=AMAP_SECURITY_CODE or '')
 
 
 @app.route('/api/search/stream', methods=['POST'])
