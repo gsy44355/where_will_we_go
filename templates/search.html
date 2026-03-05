@@ -516,7 +516,6 @@
 
 <script>
 const AMAP_JS_KEY = '{{ amap_js_key }}';
-const AMAP_SECURITY_CODE = '{{ amap_security_code }}';
 
 const COLORS = [
     '#6366f1','#10b981','#f59e0b','#ef4444',
@@ -624,12 +623,19 @@ function toggleLog() {
 function loadAMap() {
     return new Promise((resolve, reject) => {
         if (window.AMap) { resolve(); return; }
-        if (AMAP_SECURITY_CODE) {
-            window._AMapSecurityConfig = { securityJsCode: AMAP_SECURITY_CODE };
-        }
+        window._AMapSecurityConfig = { serviceHost: '/_AMapService' };
+        const _origAlert = window.alert;
+        window.alert = function(msg) {
+            if (typeof msg === 'string' && msg.indexOf('JSAPI') !== -1) return;
+            _origAlert.apply(window, arguments);
+        };
         const s = document.createElement('script');
-        s.src = 'https://webapi.amap.com/maps?v=2.0&key=' + AMAP_JS_KEY;
-        s.onload = resolve;
+        s.src = 'https://webapi.amap.com/loader.js';
+        s.onload = () => {
+            AMapLoader.load({ key: AMAP_JS_KEY, version: '2.0' })
+                .then(AMap => { window.AMap = AMap; resolve(); })
+                .catch(reject);
+        };
         s.onerror = () => reject(new Error('高德地图JS加载失败'));
         document.head.appendChild(s);
     });

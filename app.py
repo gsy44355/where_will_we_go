@@ -10,6 +10,7 @@ from datetime import datetime
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, Response, stream_with_context
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
+import requests as http_requests
 from amap_api import search_brands_with_progress, search_brands
 from cluster_finder import find_clusters
 from output import output_html_string
@@ -155,8 +156,7 @@ def logout():
 def search():
     """搜索页面"""
     return render_template('search.html',
-                           amap_js_key=AMAP_JS_KEY or AMAP_API_KEY,
-                           amap_security_code=AMAP_SECURITY_CODE or '')
+                           amap_js_key=AMAP_JS_KEY or AMAP_API_KEY)
 
 
 @app.route('/api/search/stream', methods=['POST'])
@@ -262,7 +262,7 @@ def api_search_stream():
                 'clusters': clusters, 'timestamp': datetime.now().isoformat()
             }
 
-            html_content = output_html_string(clusters, city)
+            html_content = output_html_string(clusters, city, proxy_mode=True)
 
             session['last_result'] = {
                 'city': city, 'brands': brands_with_stores,
@@ -341,6 +341,22 @@ def map_view():
     if not html_content:
         return render_template('map_view.html', html_content='')
     return render_template('map_view.html', html_content=html_content)
+
+
+@app.route('/_AMapService/<path:path>')
+def amap_proxy(path):
+    """代理高德 JS API 请求，在服务端附加安全密钥，避免前端暴露 securityJsCode"""
+    url = f'https://restapi.amap.com/{path}'
+    params = dict(request.args)
+    if AMAP_SECURITY_CODE:
+        params['jscode'] = AMAP_SECURITY_CODE
+    try:
+        resp = http_requests.get(url, params=params, timeout=10)
+        return Response(resp.content, status=resp.status_code,
+                        content_type=resp.headers.get('Content-Type', 'application/json'))
+    except Exception:
+        return Response('{"error":"proxy request failed"}', status=502,
+                        content_type='application/json')
 
 
 if __name__ == '__main__':

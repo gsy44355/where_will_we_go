@@ -90,7 +90,7 @@ def output_html(clusters: List[Dict], city: str, filename: str = "map.html"):
     return html_content
 
 
-def output_html_string(clusters: List[Dict], city: str) -> str:
+def output_html_string(clusters: List[Dict], city: str, proxy_mode: bool = False) -> str:
     """
     生成HTML地图字符串（用于web服务）
     
@@ -140,9 +140,18 @@ def output_html_string(clusters: List[Dict], city: str) -> str:
     # 地图JS API密钥：优先使用JS专用Key，否则回退到REST API Key
     js_key = AMAP_JS_KEY or AMAP_API_KEY
 
-    # 安全密钥配置（仅在配置了安全密钥时才输出，保持向后兼容）
+    # 安全密钥配置
     security_script = ""
-    if AMAP_SECURITY_CODE:
+    if proxy_mode:
+        # Web 模式：使用代理服务器，前端不暴露安全密钥
+        security_script = """
+    <script type="text/javascript">
+        window._AMapSecurityConfig = {
+            serviceHost: '/_AMapService'
+        };
+    </script>"""
+    elif AMAP_SECURITY_CODE:
+        # CLI 模式：独立 HTML 文件，直接嵌入安全密钥
         security_script = """
     <script type="text/javascript">
         window._AMapSecurityConfig = {
