@@ -514,6 +514,8 @@ function backToSearch() {
     $('errorMessage').style.display = 'none';
     if (mapInstance) { mapInstance.destroy(); mapInstance = null; }
     clusterGroups = [];
+    /* destroy() 会清空容器，需要恢复 mapLoading */
+    $('mapContainer').innerHTML = '<div class="map-loading" id="mapLoading"><div class="map-spinner"></div><span>加载地图中...</span></div>';
 }
 
 function toggleLog() {

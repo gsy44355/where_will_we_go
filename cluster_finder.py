@@ -15,24 +15,64 @@ except ImportError:
     OPTIMIZED_AVAILABLE = False
 
 
+def _store_key(store: Dict) -> str:
+    """生成门店唯一标识"""
+    pid = store.get('poi_id')
+    if pid:
+        return pid
+    return f"{store['lat']:.6f},{store['lon']:.6f}"
+
+
+def _deduplicate_clusters(clusters: List[Dict]) -> List[Dict]:
+    """
+    对商圈列表去重：每个门店只保留在品牌数最多（距离最短）的商圈中。
+
+    算法：按 brand_count 降序、max_distance 升序排列，贪心分配。
+    """
+    if not clusters:
+        return clusters
+
+    sorted_clusters = sorted(
+        clusters, key=lambda c: (-c['brand_count'], c['max_distance'])
+    )
+
+    used_stores = set()
+    result = []
+
+    for cluster in sorted_clusters:
+        store_keys = {_store_key(s) for s in cluster['brands'].values()}
+
+        if store_keys & used_stores:
+            continue
+
+        used_stores |= store_keys
+        result.append(cluster)
+
+    if len(result) < len(clusters):
+        print(f"  去重: {len(clusters)} 个商圈 -> {len(result)} 个商圈（每店仅归属品牌最多的商圈）")
+
+    return result
+
+
 def find_clusters(brand_stores_dict: Dict[str, List[Dict]], threshold: float, use_optimized: bool = True) -> List[Dict]:
     """
     查找所有符合条件的商圈
-    
+
     商圈定义：每个品牌至少有一个门店，且这些门店之间两两距离都小于阈值
-    
+
     Args:
         brand_stores_dict: 字典，键为品牌名，值为该品牌的门店列表
         threshold: 距离阈值（米）
         use_optimized: 是否使用优化算法（默认True）
-    
+
     Returns:
         符合条件的商圈列表，如果没有完全符合条件的，返回覆盖品牌最多的组合
     """
     # 如果优化版本可用且启用，使用优化算法
     if use_optimized and OPTIMIZED_AVAILABLE:
-        return find_clusters_optimized(brand_stores_dict, threshold)
-    
+        clusters = find_clusters_optimized(brand_stores_dict, threshold)
+        return _deduplicate_clusters(clusters)
+
     # 否则使用原始算法
     brands = list(brand_stores_dict.keys())
     
@@ -111,9 +151,9 @@ def find_clusters(brand_stores_dict: Dict[str, List[Dict]], threshold: float, us
                     "brand_count": len(valid_brands)
                 }
     
-    # 如果有完全符合条件的商圈，返回它们
+    # 如果有完全符合条件的商圈，返回去重后的结果
     if valid_clusters:
-        return valid_clusters
+        return _deduplicate_clusters(valid_clusters)
     
     # 如果没有完全符合条件的，尝试找部分品牌组合
     # 收集所有符合条件的商圈，优先返回品牌数多的
@@ -172,11 +212,11 @@ def find_clusters(brand_stores_dict: Dict[str, List[Dict]], threshold: float, us
             count = len([c for c in all_partial_clusters if c['brand_count'] == r])
             print(f"  找到 {count} 个包含 {r} 个品牌的商圈")
     
-    # 按品牌数量降序排序，返回所有结果
+    # 按品牌数量降序排序，去重后返回
     if all_partial_clusters:
         all_partial_clusters.sort(key=lambda x: x['brand_count'], reverse=True)
         print(f"  共找到 {len(all_partial_clusters)} 个符合条件的商圈（至少2个品牌）")
-        return all_partial_clusters
+        return _deduplicate_clusters(all_partial_clusters)
     
     return []
 
