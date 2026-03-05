@@ -42,7 +42,9 @@ config_local.py
 *.html
 map.html
 clusters_*.json
-
+!utools_plugin/*
+!static/*
+!templates/*
 # 操作系统
 .DS_Store
 Thumbs.db
