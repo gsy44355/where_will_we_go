@@ -117,6 +117,13 @@ def _sse_msg(msg_type, message=None, **extra):
     return f"data: {json.dumps(data)}\n\n"
 
 
+@app.errorhandler(403)
+def handle_forbidden(e):
+    """session 异常时清除 cookie 并跳转登录页"""
+    session.clear()
+    return redirect(url_for('login'))
+
+
 @app.route('/')
 def index():
     """首页，重定向到登录或搜索页"""
@@ -311,7 +318,7 @@ def api_search():
             'clusters': clusters, 'timestamp': datetime.now().isoformat()
         }
 
-        html_content = output_html_string(clusters, city)
+        html_content = output_html_string(clusters, city, proxy_mode=True)
 
         session['last_result'] = {
             'city': city, 'brands': brands_with_stores,
