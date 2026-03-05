@@ -267,7 +267,17 @@
         const searchBtn = document.getElementById('searchBtn');
         const loading = document.getElementById('loading');
         const brandsInput = document.getElementById('brands');
-        
+
+        // 恢复上次搜索参数
+        try {
+            const savedCity = localStorage.getItem('search_city');
+            const savedBrands = localStorage.getItem('search_brands');
+            const savedThreshold = localStorage.getItem('search_threshold');
+            if (savedCity) document.getElementById('city').value = savedCity;
+            if (savedBrands) document.getElementById('brands').value = savedBrands;
+            if (savedThreshold) document.getElementById('threshold').value = savedThreshold;
+        } catch(e) {}
+
         // 自动将中文逗号转换为英文逗号
         brandsInput.addEventListener('input', function(e) {
             let value = this.value;
@@ -294,6 +304,14 @@
                 return;
             }
             
+            // 保存搜索参数
+            try {
+                localStorage.setItem('search_city', city);
+                localStorage.setItem('search_brands', brands);
+                localStorage.setItem('search_threshold', threshold);
+            } catch(e) {}
+
+            const searchStartTime = Date.now();
             searchBtn.disabled = true;
             searchBtn.textContent = '搜索中...';
             errorMessage.classList.remove('show');
@@ -400,7 +418,9 @@
                     // 搜索完成
                     progressFill.style.width = '100%';
                     progressText.textContent = '搜索完成！';
-                    progressDetail.textContent = `找到 ${data.result.cluster_count} 个商圈`;
+                    const elapsed = ((Date.now() - searchStartTime) / 1000).toFixed(1);
+                    progressDetail.textContent = `找到 ${data.result.cluster_count} 个商圈，耗时 ${elapsed} 秒`;
+                    try { sessionStorage.setItem('searchElapsed', elapsed); } catch(e) {}
                     
                     // 保存结果
                     try {
