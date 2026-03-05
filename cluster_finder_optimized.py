@@ -69,7 +69,7 @@ class SpatialGrid:
         return nearby
 
 
-def find_clusters_optimized(brand_stores_dict: Dict[str, List[Dict]], threshold: float) -> List[Dict]:
+def find_clusters_optimized(brand_stores_dict: Dict[str, List[Dict]], threshold: float, required_brands: List[str] = None) -> List[Dict]:
     """
     优化的商圈查找算法
     
@@ -210,12 +210,15 @@ def find_clusters_optimized(brand_stores_dict: Dict[str, List[Dict]], threshold:
     
     # 从多到少尝试品牌组合（至少2个品牌）
     # 查找所有符合条件的商圈，不提前结束
-    for r in range(len(valid_brands), 1, -1):
-        if r < 2:  # 至少包含2个品牌
+    min_r = max(2, len(required_brands)) if required_brands else 2
+    for r in range(len(valid_brands), min_r - 1, -1):
+        if r < min_r:
             break
-        
+
         clusters_found = False
         for brand_subset in combinations(valid_brands, r):
+            if required_brands and not all(rb in brand_subset for rb in required_brands):
+                continue
             first_brand_sub = brand_subset[0]
             
             for first_store_idx in brand_to_indices[first_brand_sub]:

@@ -154,6 +154,52 @@
         .form-group input::placeholder { color: #c0c0c0; }
         .form-group small { display: block; color: #b0b0b0; font-size: 11px; margin-top: 5px; }
 
+        /* ── Brand Tags ── */
+        .brand-tags-area {
+            margin-top: -12px;
+            margin-bottom: 20px;
+        }
+        .brand-tags-hint {
+            font-size: 11px;
+            color: #b0b0b0;
+            margin-bottom: 6px;
+        }
+        .brand-tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .brand-tag-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+            border: 1.5px solid var(--border);
+            background: #fafafc;
+            color: var(--text2);
+        }
+        .brand-tag-item:hover {
+            border-color: var(--pri);
+            background: #f0f2ff;
+        }
+        .brand-tag-item.required {
+            background: var(--grad);
+            color: white;
+            border-color: transparent;
+            font-weight: 600;
+        }
+        .brand-tag-item.required:hover {
+            opacity: 0.9;
+        }
+        .brand-tag-star {
+            font-size: 11px;
+        }
+
         .btn-search {
             width: 100%; padding: 13px;
             background: var(--grad);
@@ -431,6 +477,10 @@
                     <input type="text" id="brands" placeholder="优衣库, 海底捞, 星巴克..." required>
                     <small>多个品牌用逗号分隔，支持中文逗号</small>
                 </div>
+                <div id="brandTagsArea" class="brand-tags-area" style="display:none">
+                    <div class="brand-tags-hint">点击品牌标记为必选，必选品牌在部分匹配时优先保证</div>
+                    <div id="brandTagsContainer" class="brand-tags-container"></div>
+                </div>
                 <button type="submit" class="btn-search" id="searchBtn">开始搜索</button>
             </form>
 
@@ -479,20 +529,66 @@ let mapInstance = null;
 let clusterGroups = [];
 let logVisible = false;
 
+let requiredBrands = new Set();
+
 /* ── LocalStorage restore ── */
 try {
     const sc = localStorage.getItem('search_city');
     const sb = localStorage.getItem('search_brands');
     const st = localStorage.getItem('search_threshold');
+    const sr = localStorage.getItem('search_required_brands');
     if (sc) $('city').value = sc;
     if (sb) $('brands').value = sb;
     if (st) $('threshold').value = st;
+    if (sr) requiredBrands = new Set(JSON.parse(sr));
 } catch(e) {}
+
+/* ── Brand Tags ── */
+function renderBrandTags() {
+    const input = $('brands').value.replace(/[，；]/g, ',');
+    const brands = input.split(',').map(b => b.trim()).filter(Boolean);
+    const area = $('brandTagsArea');
+    const container = $('brandTagsContainer');
+
+    if (brands.length === 0) {
+        area.style.display = 'none';
+        return;
+    }
+
+    area.style.display = 'block';
+    // Remove required brands that are no longer in the input
+    for (const rb of [...requiredBrands]) {
+        if (!brands.includes(rb)) requiredBrands.delete(rb);
+    }
+
+    container.innerHTML = '';
+    brands.forEach(brand => {
+        const tag = document.createElement('span');
+        const isRequired = requiredBrands.has(brand);
+        tag.className = 'brand-tag-item' + (isRequired ? ' required' : '');
+        tag.innerHTML = (isRequired ? '<span class="brand-tag-star">★</span>' : '<span class="brand-tag-star">☆</span>') + brand;
+        tag.addEventListener('click', () => {
+            if (requiredBrands.has(brand)) {
+                requiredBrands.delete(brand);
+            } else {
+                requiredBrands.add(brand);
+            }
+            try { localStorage.setItem('search_required_brands', JSON.stringify([...requiredBrands])); } catch(e) {}
+            renderBrandTags();
+        });
+        container.appendChild(tag);
+    });
+}
 
 /* ── Chinese comma auto-convert ── */
 $('brands').addEventListener('input', function() {
     this.value = this.value.replace(/[，；]/g, ',');
+    renderBrandTags();
 });
+$('brands').addEventListener('change', renderBrandTags);
+
+/* Render on load */
+renderBrandTags();
 
 /* ── Helpers ── */
 function showError(msg) {
@@ -705,10 +801,13 @@ $('searchForm').addEventListener('submit', (e) => {
 
     if (!city || !brands) { showError('请填写所有必填项'); return; }
 
+    const requiredBrandsStr = [...requiredBrands].filter(b => brands.split(',').map(s=>s.trim()).includes(b)).join(',');
+
     try {
         localStorage.setItem('search_city', city);
         localStorage.setItem('search_brands', brands);
         localStorage.setItem('search_threshold', threshold);
+        localStorage.setItem('search_required_brands', JSON.stringify([...requiredBrands]));
     } catch(e) {}
 
     const t0 = Date.now();
@@ -735,7 +834,7 @@ $('searchForm').addEventListener('submit', (e) => {
     fetch('/api/search/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ city, brands, threshold })
+        body: JSON.stringify({ city, brands, threshold, required_brands: requiredBrandsStr })
     }).then(response => {
         if (!response.ok) throw new Error('请求失败');
         const reader = response.body.getReader();

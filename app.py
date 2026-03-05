@@ -38,7 +38,7 @@ def login_required(f):
 
 
 def _validate_search_params(data):
-    """验证搜索参数，返回 (city, brands, threshold) 或抛出 ValueError"""
+    """验证搜索参数，返回 (city, brands, threshold, required_brands) 或抛出 ValueError"""
     city = data.get('city', '').strip()
     brands_str = data.get('brands', '').strip()
     threshold = data.get('threshold', DEFAULT_DISTANCE_THRESHOLD)
@@ -61,7 +61,14 @@ def _validate_search_params(data):
     if not brands:
         raise ValueError('请至少提供一个品牌名称')
 
-    return city, brands, threshold
+    required_brands_str = data.get('required_brands', '').strip()
+    required_brands = [b.strip() for b in required_brands_str.split(",") if b.strip()] if required_brands_str else None
+    if required_brands:
+        invalid = [b for b in required_brands if b not in brands]
+        if invalid:
+            raise ValueError(f'必选品牌必须是品牌列表的子集，以下不在列表中: {", ".join(invalid)}')
+
+    return city, brands, threshold, required_brands
 
 
 def _run_threaded_task(task_fn, msg_queue):
@@ -159,7 +166,7 @@ def api_search_stream():
     def generate():
         try:
             data = request.get_json()
-            city, brands, threshold = _validate_search_params(data)
+            city, brands, threshold, required_brands = _validate_search_params(data)
         except (ValueError, Exception) as e:
             yield _sse_msg('error', str(e))
             return
@@ -223,11 +230,15 @@ def api_search_stream():
                     cluster_queue.put({'type': 'progress', 'stage': 'clustering',
                                        'message': message, 'progress': 60})
 
+            # 过滤掉未找到门店的必选品牌
+            effective_required = [b for b in required_brands if b in brands_with_stores] if required_brands else None
+
             def do_clustering():
                 with LogCapture(cluster_log_cb):
                     return find_clusters(
                         {b: brand_stores[b] for b in brands_with_stores},
-                        threshold
+                        threshold,
+                        required_brands=effective_required
                     )
 
             clusters, error = yield from _run_threaded_task(do_clustering, cluster_queue)
@@ -272,7 +283,7 @@ def api_search():
     """API接口：执行商圈搜索"""
     try:
         data = request.get_json()
-        city, brands, threshold = _validate_search_params(data)
+        city, brands, threshold, required_brands = _validate_search_params(data)
 
         brand_stores = search_brands(city, brands)
 
@@ -280,9 +291,12 @@ def api_search():
         if not brands_with_stores:
             return jsonify({'success': False, 'message': '未找到任何品牌的门店'}), 404
 
+        effective_required = [b for b in required_brands if b in brands_with_stores] if required_brands else None
+
         clusters = find_clusters(
             {b: brand_stores[b] for b in brands_with_stores},
-            threshold
+            threshold,
+            required_brands=effective_required
         )
 
         if not clusters:

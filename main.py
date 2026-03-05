@@ -50,7 +50,13 @@ def main():
         default="map.html",
         help="HTML输出文件名（默认：map.html）"
     )
-    
+    parser.add_argument(
+        "--required-brands",
+        type=str,
+        default=None,
+        help="必选品牌列表，用逗号分隔（回退时子集必须包含这些品牌）"
+    )
+
     args = parser.parse_args()
     
     # 检查API密钥
@@ -65,14 +71,26 @@ def main():
         print("错误: 请至少提供一个品牌名称")
         sys.exit(1)
     
+    # 解析必选品牌
+    required_brands = None
+    if args.required_brands:
+        required_brands = [b.strip() for b in args.required_brands.split(",") if b.strip()]
+        if required_brands:
+            invalid = [b for b in required_brands if b not in brands]
+            if invalid:
+                print(f"错误: 必选品牌必须是品牌列表的子集，以下品牌不在列表中: {', '.join(invalid)}")
+                sys.exit(1)
+
     # 解析输出格式
     output_formats = [f.strip() for f in args.output.split(",") if f.strip()]
     if not output_formats:
         output_formats = ["json", "log"]
-    
+
     print(f"开始搜索商圈...")
     print(f"城市: {args.city}")
     print(f"品牌: {', '.join(brands)}")
+    if required_brands:
+        print(f"必选品牌: {', '.join(required_brands)}")
     print(f"距离阈值: {args.threshold} 米")
     print()
     
@@ -93,9 +111,14 @@ def main():
     
     # 2. 查找商圈
     print("\n正在查找符合条件的商圈...")
+    # 过滤掉未找到门店的必选品牌
+    if required_brands:
+        required_brands = [b for b in required_brands if b in brands_with_stores]
+
     clusters = find_clusters(
         {brand: brand_stores[brand] for brand in brands_with_stores},
-        args.threshold
+        args.threshold,
+        required_brands=required_brands
     )
     
     # 3. 输出结果

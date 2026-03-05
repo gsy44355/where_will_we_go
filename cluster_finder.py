@@ -54,7 +54,7 @@ def _deduplicate_clusters(clusters: List[Dict]) -> List[Dict]:
     return result
 
 
-def find_clusters(brand_stores_dict: Dict[str, List[Dict]], threshold: float, use_optimized: bool = True) -> List[Dict]:
+def find_clusters(brand_stores_dict: Dict[str, List[Dict]], threshold: float, required_brands: List[str] = None, use_optimized: bool = True) -> List[Dict]:
     """
     查找所有符合条件的商圈
 
@@ -63,6 +63,7 @@ def find_clusters(brand_stores_dict: Dict[str, List[Dict]], threshold: float, us
     Args:
         brand_stores_dict: 字典，键为品牌名，值为该品牌的门店列表
         threshold: 距离阈值（米）
+        required_brands: 必选品牌列表，回退时子集必须包含这些品牌
         use_optimized: 是否使用优化算法（默认True）
 
     Returns:
@@ -70,7 +71,7 @@ def find_clusters(brand_stores_dict: Dict[str, List[Dict]], threshold: float, us
     """
     # 如果优化版本可用且启用，使用优化算法
     if use_optimized and OPTIMIZED_AVAILABLE:
-        clusters = find_clusters_optimized(brand_stores_dict, threshold)
+        clusters = find_clusters_optimized(brand_stores_dict, threshold, required_brands=required_brands)
         return _deduplicate_clusters(clusters)
 
     # 否则使用原始算法
@@ -165,25 +166,30 @@ def find_clusters(brand_stores_dict: Dict[str, List[Dict]], threshold: float, us
     max_brand_count = 0
     
     # 计算部分组合的总数（用于显示进度）
+    min_r = max(2, len(required_brands)) if required_brands else 2
     total_partial_combinations = 0
-    for r in range(len(valid_brands), 1, -1):
-        if r < 2:  # 至少包含2个品牌
+    for r in range(len(valid_brands), min_r - 1, -1):
+        if r < min_r:
             break
         for brand_subset in combinations(valid_brands, r):
+            if required_brands and not all(rb in brand_subset for rb in required_brands):
+                continue
             store_lists_subset = [brand_stores_dict[brand] for brand in brand_subset]
             total_partial_combinations += math.prod(len(stores) for stores in store_lists_subset)
-    
+
     if total_partial_combinations > 0:
-        print(f"  需要检查 {total_partial_combinations:,} 个部分品牌组合（至少2个品牌）...")
-    
-    # 从多到少尝试品牌组合（至少2个品牌）
+        print(f"  需要检查 {total_partial_combinations:,} 个部分品牌组合（至少{min_r}个品牌）...")
+
+    # 从多到少尝试品牌组合
     # 查找所有符合条件的商圈，不提前结束
-    for r in range(len(valid_brands), 1, -1):
-        if r < 2:  # 至少包含2个品牌
+    for r in range(len(valid_brands), min_r - 1, -1):
+        if r < min_r:
             break
-        
+
         clusters_found = False
         for brand_subset in combinations(valid_brands, r):
+            if required_brands and not all(rb in brand_subset for rb in required_brands):
+                continue
             store_lists_subset = [brand_stores_dict[brand] for brand in brand_subset]
             subset_total = math.prod(len(stores) for stores in store_lists_subset)
             
